@@ -1,6 +1,14 @@
 import pandas as pd
 import streamlit as st
-
+st.markdown(
+    """
+    <link rel="manifest" href="https://raw.githubusercontent.com/barlagesta/inventario-linpac/main/manifest.json">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-title" content="Inventario">
+    """,
+    unsafe_allow_html=True
+)
 # Configuración de la página en móvil
 st.set_page_config(page_title="Consulta de Inventario", layout="centered")
 
