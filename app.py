@@ -1,5 +1,6 @@
 import pandas as pd
 import streamlit as st
+import re
 
 # Configuración de página
 st.set_page_config(
@@ -40,7 +41,28 @@ st.markdown("""
         font-size: 0.9rem;
     }
 
-    /* Tarjetas de resultados de alto contraste */
+    /* Caja Resumen Inicio / Fin */
+    .summary-box {
+        background-color: #eff6ff;
+        border: 2px solid #3b82f6;
+        border-radius: 12px;
+        padding: 1rem 1.2rem;
+        margin-bottom: 1.5rem;
+        box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.1);
+    }
+    .summary-title {
+        font-size: 1.1rem;
+        font-weight: bold;
+        color: #1e40af;
+        margin-bottom: 8px;
+    }
+    .summary-text {
+        font-size: 1rem;
+        color: #1e3a8a;
+        line-height: 1.5;
+    }
+
+    /* Tarjetas de resultados */
     .result-card {
         background-color: #ffffff;
         border: 2px solid #cbd5e1;
@@ -91,7 +113,7 @@ st.markdown("""
         border: 1px solid #fde68a;
     }
     
-    /* Pestañas bien legibles */
+    /* Pestañas */
     .stTabs [data-baseweb="tab-list"] {
         gap: 6px;
     }
@@ -122,7 +144,7 @@ st.markdown(
     unsafe_allow_html=True
 )
 
-# Banner Principal Claro
+# Banner Principal
 st.markdown("""
 <div class="main-header">
     <h1>📦 LINPAC INVENTARIO</h1>
@@ -142,18 +164,16 @@ def load_data():
 
 df, df_calle0 = load_data()
 
-# Pestañas de Navegación
-tab1, tab2, tab3, tab4 = st.tabs(["🔍 Buscar Código", "📍 Por Posición", "📋 Ver Calle", "🏢 Calle 0"])
-
 # Helper para extraer el número entero de posición
 def parse_pos_num(val):
     try:
-        # Extrae solo los dígitos si es un string (ej. "01.03" o "Pos 5")
-        import re
         nums = re.findall(r'\d+', str(val))
         return int(nums[0]) if nums else 0
     except Exception:
         return 0
+
+# Pestañas de Navegación
+tab1, tab2, tab3, tab4 = st.tabs(["🔍 Buscar Código", "📍 Por Posición", "📋 Ver Calle", "🏢 Calle 0"])
 
 # --- TAB 1: BUSCAR CÓDIGO ---
 with tab1:
@@ -184,10 +204,10 @@ with tab1:
         if not df_calle0.empty:
             c0_res = df_calle0[df_calle0["codigo"].astype(str).str.contains(cod_clean, na=False)]
             for idx, row in c0_res.iterrows():
-                pos_val = row["posicion"]
+                pos_val = str(row["posicion"])
                 pos_num = parse_pos_num(pos_val)
                 matches_c0.append({
-                    "Sección": row["seccion"],
+                    "Sección": str(row["seccion"]),
                     "Posición_Str": pos_val,
                     "Posición_Num": pos_num,
                     "Código": row["codigo"],
@@ -195,12 +215,66 @@ with tab1:
                     "Cliente": row["zona_observaciones"]
                 })
 
-        # Ordenar ambas listas por posición ascendente (de menor a mayor)
+        # Ordenar por posición (de menor a mayor)
         matches = sorted(matches, key=lambda x: x["Posición"])
         matches_c0 = sorted(matches_c0, key=lambda x: x["Posición_Num"])
 
-        # Mostrar métricas y resumen de rangos
         if matches or matches_c0:
+            
+            # --- CAJA DE RESUMEN INICIO Y FIN AL PRINCIPIO ---
+            if matches:
+                inicio = matches[0]
+                fin = matches[-1]
+                
+                if len(matches) == 1:
+                    resumen_html = f"""
+                    <div class="summary-box">
+                        <div class="summary-title">📍 Resumen de Ubicación para <code>{cod_clean}</code></div>
+                        <div class="summary-text">
+                            El código está ubicado en:<br>
+                            👉 <b>Calle {inicio['Calle']}</b>, <b>Posición {inicio['Posición']}</b>, <b>{inicio['Columna']}</b>
+                        </div>
+                    </div>
+                    """
+                else:
+                    resumen_html = f"""
+                    <div class="summary-box">
+                        <div class="summary-title">↔️ Rango de Distribución para <code>{cod_clean}</code></div>
+                        <div class="summary-text">
+                            🟢 <b>Inicio:</b> Calle <b>{inicio['Calle']}</b>, Posición <b>{inicio['Posición']}</b>, <b>{inicio['Columna']}</b><br>
+                            🔴 <b>Fin:</b> Calle <b>{fin['Calle']}</b>, Posición <b>{fin['Posición']}</b>, <b>{fin['Columna']}</b>
+                        </div>
+                    </div>
+                    """
+                st.markdown(resumen_html, unsafe_allow_html=True)
+            
+            elif matches_c0:
+                inicio_c0 = matches_c0[0]
+                fin_c0 = matches_c0[-1]
+                
+                if len(matches_c0) == 1:
+                    resumen_html = f"""
+                    <div class="summary-box">
+                        <div class="summary-title">🏢 Resumen de Ubicación en Calle 0 para <code>{cod_clean}</code></div>
+                        <div class="summary-text">
+                            El código está ubicado en:<br>
+                            👉 <b>Sección {inicio_c0['Sección']}</b>, <b>Posición {inicio_c0['Posición_Str']}</b>
+                        </div>
+                    </div>
+                    """
+                else:
+                    resumen_html = f"""
+                    <div class="summary-box">
+                        <div class="summary-title">↔️ Rango de Distribución en Calle 0 para <code>{cod_clean}</code></div>
+                        <div class="summary-text">
+                            🟢 <b>Inicio:</b> Sección <b>{inicio_c0['Sección']}</b>, Posición <b>{inicio_c0['Posición_Str']}</b><br>
+                            🔴 <b>Fin:</b> Sección <b>{fin_c0['Sección']}</b>, Posición <b>{fin_c0['Posición_Str']}</b>
+                        </div>
+                    </div>
+                    """
+                st.markdown(resumen_html, unsafe_allow_html=True)
+
+            # Métricas
             c1, c2 = st.columns(2)
             tot_p = sum(m["Palets"] for m in matches) if matches else 0
             tot_b = sum(m["Bultos"] for m in matches_c0) if matches_c0 else 0
@@ -210,15 +284,7 @@ with tab1:
             
             # Tarjetas Calles Generales
             if matches:
-                pos_min = matches[0]["Posición"]
-                pos_max = matches[-1]["Posición"]
-                
-                st.subheader("📍 Calles Generales")
-                if pos_min == pos_max:
-                    st.info(f"📍 **Ubicación exacta:** Posición **{pos_min}**")
-                else:
-                    st.info(f"↔️ **Rango de distribución:** Desde **Posición {pos_min}** hasta **Posición {pos_max}**")
-                    
+                st.subheader("📍 Detalle por Posición (Calles Generales)")
                 for m in matches:
                     st.markdown(f"""
                     <div class="result-card">
@@ -233,15 +299,7 @@ with tab1:
             
             # Tarjetas Calle 0
             if matches_c0:
-                pos_min_c0 = matches_c0[0]["Posición_Str"]
-                pos_max_c0 = matches_c0[-1]["Posición_Str"]
-                
-                st.subheader("🏢 Calle 0")
-                if len(matches_c0) == 1:
-                    st.info(f"📍 **Ubicación exacta:** Posición **{pos_min_c0}**")
-                else:
-                    st.info(f"↔️ **Rango de distribución:** Desde **Posición {pos_min_c0}** hasta **Posición {pos_max_c0}**")
-
+                st.subheader("🏢 Detalle por Posición (Calle 0)")
                 for m in matches_c0:
                     st.markdown(f"""
                     <div class="result-card-c0">
