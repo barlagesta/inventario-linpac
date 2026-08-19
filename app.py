@@ -9,88 +9,103 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# Estilos CSS personalizados para mejorar la interfaz visual
+# Estilos CSS de MODO CLARO (Alto contraste y fácil lectura)
 st.markdown("""
 <style>
-    /* Estilo general y tipografía */
+    /* Estilo general con fondo claro */
     .stApp {
-        background-color: #0f172a;
-        color: #f8fafc;
+        background-color: #f8fafc;
+        color: #0f172a;
     }
     
-    /* Encabezado principal */
+    /* Encabezado principal en azul claro sobrio */
     .main-header {
-        background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
-        padding: 1.5rem;
-        border-radius: 16px;
-        border: 1px solid #334155;
+        background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+        padding: 1.2rem;
+        border-radius: 12px;
         text-align: center;
-        margin-bottom: 1.5rem;
-        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
+        margin-bottom: 1.2rem;
+        color: #ffffff;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
     }
     .main-header h1 {
-        color: #38bdf8;
+        color: #ffffff !important;
         font-weight: 800;
         margin: 0;
-        font-size: 1.8rem;
+        font-size: 1.7rem;
     }
     .main-header p {
-        color: #94a3b8;
-        margin-top: 5px;
+        color: #bfdbfe;
+        margin-top: 4px;
         font-size: 0.9rem;
     }
 
-    /* Tarjetas de resultados */
+    /* Tarjetas de resultados de alto contraste */
     .result-card {
-        background-color: #1e293b;
-        border-radius: 12px;
+        background-color: #ffffff;
+        border: 2px solid #cbd5e1;
+        border-left: 6px solid #2563eb;
+        border-radius: 10px;
         padding: 1rem 1.2rem;
         margin-bottom: 0.8rem;
-        border-left: 5px solid #0284c7;
-        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2);
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
     }
     .result-card-c0 {
-        background-color: #1e293b;
-        border-radius: 12px;
+        background-color: #ffffff;
+        border: 2px solid #cbd5e1;
+        border-left: 6px solid #d97706;
+        border-radius: 10px;
         padding: 1rem 1.2rem;
         margin-bottom: 0.8rem;
-        border-left: 5px solid #f59e0b;
-        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2);
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
     }
     
     .card-title {
-        font-size: 1.1rem;
+        font-size: 1.15rem;
         font-weight: bold;
-        color: #f1f5f9;
+        color: #0f172a;
     }
     .card-subtitle {
-        font-size: 0.85rem;
-        color: #94a3b8;
+        font-size: 0.95rem;
+        color: #334155;
+        margin-top: 3px;
     }
     .card-badge {
         display: inline-block;
-        padding: 0.25rem 0.6rem;
+        padding: 0.3rem 0.7rem;
         border-radius: 6px;
-        font-size: 0.8rem;
-        font-weight: 600;
-        background-color: #0369a1;
-        color: #ffffff;
+        font-size: 0.85rem;
+        font-weight: 700;
+        background-color: #dbeafe;
+        color: #1e40af;
+        border: 1px solid #bfdbfe;
+    }
+    .card-badge-c0 {
+        display: inline-block;
+        padding: 0.3rem 0.7rem;
+        border-radius: 6px;
+        font-size: 0.85rem;
+        font-weight: 700;
+        background-color: #fef3c7;
+        color: #92400e;
+        border: 1px solid #fde68a;
     }
     
-    /* Personalización de Pestañas */
+    /* Pestañas bien legibles */
     .stTabs [data-baseweb="tab-list"] {
-        gap: 8px;
+        gap: 6px;
     }
     .stTabs [data-baseweb="tab"] {
         border-radius: 8px;
-        padding: 8px 16px;
-        background-color: #1e293b;
-        color: #94a3b8;
-        border: 1px solid #334155;
+        padding: 8px 14px;
+        background-color: #e2e8f0;
+        color: #334155;
+        font-weight: 600;
+        border: 1px solid #cbd5e1;
     }
     .stTabs [aria-selected="true"] {
-        background-color: #0284c7 !important;
-        color: white !important;
+        background-color: #2563eb !important;
+        color: #ffffff !important;
         font-weight: bold;
     }
 </style>
@@ -107,7 +122,7 @@ st.markdown(
     unsafe_allow_html=True
 )
 
-# Banner Principal
+# Banner Principal Claro
 st.markdown("""
 <div class="main-header">
     <h1>📦 LINPAC INVENTARIO</h1>
@@ -127,7 +142,7 @@ def load_data():
 
 df, df_calle0 = load_data()
 
-# Pestañas de Navegación Visual
+# Pestañas de Navegación
 tab1, tab2, tab3, tab4 = st.tabs(["🔍 Buscar Código", "📍 Por Posición", "📋 Ver Calle", "🏢 Calle 0"])
 
 # --- TAB 1: BUSCAR CÓDIGO ---
@@ -161,14 +176,14 @@ with tab1:
                     "Cliente": row["zona_observaciones"]
                 })
 
-        # Mostrar métricas rápidas
+        # Métricas
         if matches or matches_c0:
             c1, c2 = st.columns(2)
             tot_p = sum(m["Palets"] for m in matches) if matches else 0
             tot_b = sum(m["Bultos"] for m in matches_c0) if matches_c0 else 0
             
-            c1.metric(label="Palets (Calles Grales.)", value=f"{tot_p} palets")
-            c2.metric(label="Bultos (Calle 0)", value=f"{tot_b} bultos")
+            c1.metric(label="Palets (Calles Grales.)", value=f"{tot_p} palet(s)")
+            c2.metric(label="Bultos (Calle 0)", value=f"{tot_b} bulto(s)")
             
             # Tarjetas Calles Generales
             if matches:
@@ -180,7 +195,7 @@ with tab1:
                         <div class="card-subtitle">Ubicación: <b>{m['Columna']}</b></div>
                         <div style="margin-top:8px;">
                             <span class="card-badge">📦 {m['Palets']} Palet(s)</span>
-                            <span style="margin-left: 10px; color: #cbd5e1;">Código: <code>{m['Valor']}</code></span>
+                            <span style="margin-left: 10px; font-weight: bold; color: #0f172a;">Código: {m['Valor']}</span>
                         </div>
                     </div>
                     """, unsafe_allow_html=True)
@@ -194,8 +209,8 @@ with tab1:
                         <div class="card-title">Sección {m['Sección']} — {m['Posición']}</div>
                         <div class="card-subtitle">Cliente/Zona: <b>{m['Cliente']}</b></div>
                         <div style="margin-top:8px;">
-                            <span class="card-badge" style="background-color: #d97706;">📦 {m['Bultos']} Bultos</span>
-                            <span style="margin-left: 10px; color: #cbd5e1;">Código: <code>{m['Código']}</code></span>
+                            <span class="card-badge-c0">📦 {m['Bultos']} Bulto(s)</span>
+                            <span style="margin-left: 10px; font-weight: bold; color: #0f172a;">Código: {m['Código']}</span>
                         </div>
                     </div>
                     """, unsafe_allow_html=True)
@@ -232,9 +247,9 @@ with tab4:
     if df_calle0.empty:
         st.error("Archivo calle0.csv no encontrado.")
     else:
-        seccion_sel = st.segmented_control("Filtrar Sección:", ["Todas", "00.01", "00.02"], default="Todas")
+        seccion_sel = st.radio("Filtrar Sección:", ["Todas", "00.01", "00.02"], horizontal=True)
         
-        if seccion_sel and seccion_sel != "Todas":
+        if seccion_sel != "Todas":
             df_c0_view = df_calle0[df_calle0["seccion"] == seccion_sel]
         else:
             df_c0_view = df_calle0
