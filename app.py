@@ -18,7 +18,7 @@ st.markdown("""
         color: #0f172a;
     }
     
-    /* Encabezado principal en azul claro sobrio */
+    /* Encabezado principal */
     .main-header {
         background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
         padding: 1.2rem;
@@ -145,6 +145,16 @@ df, df_calle0 = load_data()
 # Pestañas de Navegación
 tab1, tab2, tab3, tab4 = st.tabs(["🔍 Buscar Código", "📍 Por Posición", "📋 Ver Calle", "🏢 Calle 0"])
 
+# Helper para extraer el número entero de posición
+def parse_pos_num(val):
+    try:
+        # Extrae solo los dígitos si es un string (ej. "01.03" o "Pos 5")
+        import re
+        nums = re.findall(r'\d+', str(val))
+        return int(nums[0]) if nums else 0
+    except Exception:
+        return 0
+
 # --- TAB 1: BUSCAR CÓDIGO ---
 with tab1:
     codigo = st.text_input("🔎 Código de producto:", placeholder="Ej. 415716 o 403076")
@@ -156,27 +166,40 @@ with tab1:
         matches = []
         for idx, row in df.iterrows():
             calle = str(row["Calle"])
-            pos = row["Posición"]
+            pos = int(row["Posición"]) if pd.notna(row["Posición"]) else 0
             for col in ["Columna A", "Columna B", "Columna C", "Columna D"]:
                 val = str(row[col]) if pd.notna(row[col]) else ""
                 if cod_clean in val:
                     pallets = 2 if "x2" in val.lower() else 1
-                    matches.append({"Calle": calle, "Posición": pos, "Columna": col, "Valor": val, "Palets": pallets})
+                    matches.append({
+                        "Calle": calle, 
+                        "Posición": pos, 
+                        "Columna": col, 
+                        "Valor": val, 
+                        "Palets": pallets
+                    })
         
         # Buscar en Calle 0
         matches_c0 = []
         if not df_calle0.empty:
             c0_res = df_calle0[df_calle0["codigo"].astype(str).str.contains(cod_clean, na=False)]
             for idx, row in c0_res.iterrows():
+                pos_val = row["posicion"]
+                pos_num = parse_pos_num(pos_val)
                 matches_c0.append({
                     "Sección": row["seccion"],
-                    "Posición": row["posicion"],
+                    "Posición_Str": pos_val,
+                    "Posición_Num": pos_num,
                     "Código": row["codigo"],
-                    "Bultos": row["bultos"],
+                    "Bultos": int(row["bultos"]) if pd.notna(row["bultos"]) else 0,
                     "Cliente": row["zona_observaciones"]
                 })
 
-        # Métricas
+        # Ordenar ambas listas por posición ascendente (de menor a mayor)
+        matches = sorted(matches, key=lambda x: x["Posición"])
+        matches_c0 = sorted(matches_c0, key=lambda x: x["Posición_Num"])
+
+        # Mostrar métricas y resumen de rangos
         if matches or matches_c0:
             c1, c2 = st.columns(2)
             tot_p = sum(m["Palets"] for m in matches) if matches else 0
@@ -187,7 +210,15 @@ with tab1:
             
             # Tarjetas Calles Generales
             if matches:
+                pos_min = matches[0]["Posición"]
+                pos_max = matches[-1]["Posición"]
+                
                 st.subheader("📍 Calles Generales")
+                if pos_min == pos_max:
+                    st.info(f"📍 **Ubicación exacta:** Posición **{pos_min}**")
+                else:
+                    st.info(f"↔️ **Rango de distribución:** Desde **Posición {pos_min}** hasta **Posición {pos_max}**")
+                    
                 for m in matches:
                     st.markdown(f"""
                     <div class="result-card">
@@ -202,11 +233,19 @@ with tab1:
             
             # Tarjetas Calle 0
             if matches_c0:
+                pos_min_c0 = matches_c0[0]["Posición_Str"]
+                pos_max_c0 = matches_c0[-1]["Posición_Str"]
+                
                 st.subheader("🏢 Calle 0")
+                if len(matches_c0) == 1:
+                    st.info(f"📍 **Ubicación exacta:** Posición **{pos_min_c0}**")
+                else:
+                    st.info(f"↔️ **Rango de distribución:** Desde **Posición {pos_min_c0}** hasta **Posición {pos_max_c0}**")
+
                 for m in matches_c0:
                     st.markdown(f"""
                     <div class="result-card-c0">
-                        <div class="card-title">Sección {m['Sección']} — {m['Posición']}</div>
+                        <div class="card-title">Sección {m['Sección']} — Posición {m['Posición_Str']}</div>
                         <div class="card-subtitle">Cliente/Zona: <b>{m['Cliente']}</b></div>
                         <div style="margin-top:8px;">
                             <span class="card-badge-c0">📦 {m['Bultos']} Bulto(s)</span>
